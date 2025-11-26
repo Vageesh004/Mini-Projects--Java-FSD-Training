@@ -16,13 +16,22 @@ Insert into Customer values
 (2, 'Priya N', 'Bangalore', '9123456780', 'priya@example.com'),
 (3, 'Rahul K', 'Hyderabad', '9090909090', 'rahul@example.com');
 
+Insert into Customer values
+(4, 'Meena S', 'Mumbai', '9812345678', 'meena@example.com'),
+(5, 'Arun P', 'Pune', '9001122334', 'arun@example.com'),
+(6, 'Kavitha R', 'Delhi', '9822113344', 'kavitha@example.com'),
+(7, 'Suresh M', 'Kolkata', '9334455667', 'suresh@example.com'),
+(8, 'Anitha L', 'Chennai', '9877001122', 'anitha@example.com'),
+(9, 'Vijay R', 'Bangalore', '9445566771', 'vijay@example.com'),
+(10, 'Roja K', 'Hyderabad', '9966332211', 'roja@example.com');
+
 
 create table Meter(
 	MeterId Int Primary Key,
-    CustomerId Int,
+    CustomerId Int,  Foreign key(CustomerID) References Customer(CustomerID) on delete cascade,
     InstallationDate Date Not Null,
-    LastReadingDate Date Not Null,
-    Foreign key(CustomerID) References Customer(CustomerID) on delete cascade
+    LastReadingDate Date Not Null
+   
 );
 
 INSERT INTO Meter VALUES
@@ -30,12 +39,23 @@ INSERT INTO Meter VALUES
 (102, 2, '2024-01-15', '2024-02-10'),
 (103, 3, '2024-03-20', '2024-03-30');
 
-create table ElectricityUasge(
+
+INSERT INTO Meter VALUES
+(104, 4, '2023-11-10', '2024-02-01'),
+(105, 5, '2024-01-01', '2024-02-25'),
+(106, 6, '2024-02-12', '2024-03-10'),
+(107, 7, '2024-03-01', '2024-03-20'),
+(108, 8, '2024-01-05', '2024-03-01'),
+(109, 9, '2024-02-20', '2024-03-05'),
+(110, 10, '2024-03-15', '2024-03-25');
+
+
+create table ElectricityUsage(
 	UasgeID int Primary Key,
-    MeterID int,
+    MeterID int, Foreign Key (MeterID) References Meter(MeterID) on delete cascade,
     ReadingDate Date Not NUll,
-    UsageUnits Numeric Check(UsageUnits >=0),
-    Foreign Key (MeterID) References Meter(MeterID) on delete cascade
+    UsageUnits Numeric Check(UsageUnits >=0)
+    
 );
 
 INSERT INTO ElectricityUsage VALUES
@@ -43,3 +63,126 @@ INSERT INTO ElectricityUsage VALUES
 (2, 101, '2024-02-01', 120),
 (3, 102, '2024-02-10', 250),
 (4, 103, '2024-03-30', 300);
+
+INSERT INTO ElectricityUsage VALUES
+(5, 104, '2024-01-10', 180),
+(6, 105, '2024-02-05', 210),
+(7, 106, '2024-03-01', 190),
+(8, 107, '2024-03-15', 260),
+(9, 108, '2024-02-22', 170),
+(10, 109, '2024-03-02', 220);
+
+
+show tables;
+drop table electricityuasge;
+
+create table Bill(
+	BillId int primary Key,
+    MeterId int,  Foreign key (MeterId) references Meter (MeterID) on delete cascade,
+    BillDate DATE Not Null,
+    AmountDue Numeric check(AmountDue>=0),
+    DueDate Date Not Null,
+    paid int Not null default '0' check(paid in('0','1'))
+   
+    
+);
+
+
+
+INSERT INTO Bill VALUES
+(1001, 101, '2024-02-05', 800, '2024-02-20', 0),
+(1002, 102, '2024-02-15', 1200, '2024-03-01', 1),
+(1003, 103, '2024-04-01', 900, '2024-04-15', 0);
+
+INSERT INTO Bill VALUES
+(1004, 104, '2024-02-10', 650,  '2024-02-25', 0),
+(1005, 105, '2024-02-20', 900,  '2024-03-05', 1),
+(1006, 106, '2024-03-05', 1100, '2024-03-20', 0),
+(1007, 107, '2024-03-18', 750,  '2024-04-01', 1),
+(1008, 108, '2024-02-28', 500,  '2024-03-15', 0),
+(1009, 109, '2024-03-10', 950,  '2024-03-25', 1),
+(1010, 110, '2024-03-25', 1200, '2024-04-10', 0);
+
+
+create table payment(
+	PaymentId int primary key,
+    BillId int,
+    FOREIGN KEY (BillId) REFERENCES Bill(BillId) ON DELETE CASCADE,
+    PaymentDate Date not null,
+    AmountPaid numeric check(AmountPaid>=0)
+);
+
+INSERT INTO Payment VALUES
+(5001, 1002, '2024-02-20', 1200);
+
+INSERT INTO Payment VALUES
+(5002, 1005, '2024-03-01', 900),
+(5003, 1007, '2024-03-20', 750),
+(5004, 1009, '2024-03-18', 950),
+(5005, 1002, '2024-02-25', 1200),
+(5006, 1005, '2024-03-10', 200), 
+(5007, 1007, '2024-04-05', 100),
+(5008, 1009, '2024-03-22', 150),
+(5009, 1005, '2024-03-15', 50),
+(5010, 1002, '2024-03-01', 100);
+
+/* Quesn k*/
+SELECT * FROM Customer;
+SELECT * FROM Meter;
+SELECT * FROM ElectricityUsage;
+SELECT * FROM Bill;
+SELECT * FROM Payment;
+
+
+/* Quesn l*/
+select MeterId,
+sum(UsageUnits) as TotalUsage
+from ElectricityUsage
+group by MeterId
+Having sum(UsageUnits) > 200;
+
+/*Quesn m*/
+SELECT 
+    c.CustomerId,
+    c.Name,
+    SUM(b.AmountDue) AS TotalUnpaid
+FROM Customer c
+JOIN Meter m ON c.CustomerId = m.CustomerId
+JOIN Bill b ON m.MeterId = b.MeterId
+WHERE b.Paid = 0
+GROUP BY c.CustomerId, c.Name
+ORDER BY TotalUnpaid DESC;
+/*select a.name,a.customerId,c.amountdue from Customer a join Meter b on 
+(a.CustomerId=b.CustomerId) join Bill c on (b.MeterId=c.MeterId and c.paid=0) order by c.amountDue desc;*/
+
+
+/*Quesn n*/
+SELECT 
+    BillId,
+    MeterId,
+    BillDate,
+    AmountDue,
+    Paid
+FROM Bill
+ORDER BY BillDate ASC;
+
+ 
+/*Quesn o*/
+select distinct
+c.customerId, c.Name
+from Customer c
+join Meter m
+on c.CustomerID=m.CustomerID
+where m.InstallationDate > '2023-12-31';
+
+
+/* Quesn p*/
+SELECT 
+    m.MeterId,
+    m.LastReadingDate,
+    SUM(e.UsageUnits) AS TotalUsage
+FROM Meter m
+LEFT JOIN ElectricityUsage e ON m.MeterId = e.MeterId
+GROUP BY m.MeterId, m.LastReadingDate
+ORDER BY TotalUsage DESC;
+
